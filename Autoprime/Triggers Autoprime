@@ -1,0 +1,73 @@
+-- =========================================================
+-- TRIGGERS
+-- =========================================================
+
+DELIMITER $$
+
+
+-- =========================================================
+-- 1. TRIGGER - CUSTOMERS
+-- Antes de inserir um cliente, define automaticamente
+-- o tipo como REGULAR caso não seja informado.
+-- =========================================================
+
+CREATE TRIGGER trg_customer_tipo_padrao
+BEFORE INSERT ON Customers
+FOR EACH ROW
+BEGIN
+
+    IF NEW.CustomerType IS NULL OR NEW.CustomerType = '' THEN
+        SET NEW.CustomerType = 'REGULAR';
+    END IF;
+
+END $$
+
+
+-- =========================================================
+-- 2. TRIGGER - PRODUCTS
+-- Antes de inserir um produto, verifica se o preço
+-- é válido. Produtos não podem possuir preço negativo.
+-- =========================================================
+
+CREATE TRIGGER trg_product_validar_preco
+BEFORE INSERT ON Products
+FOR EACH ROW
+BEGIN
+
+    IF NEW.Price < 0 THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'O preço do produto não pode ser negativo.';
+
+    END IF;
+
+END $$
+
+
+-- =========================================================
+-- 3. TRIGGER - ORDERS
+-- Antes de inserir um pedido, verifica o valor do frete.
+-- Caso não seja informado, o frete será definido como 0.
+-- Caso seja negativo, o pedido não será inserido.
+-- =========================================================
+
+CREATE TRIGGER trg_order_validar_frete
+BEFORE INSERT ON Orders
+FOR EACH ROW
+BEGIN
+
+    IF NEW.ShippingCost IS NULL THEN
+
+        SET NEW.ShippingCost = 0.00;
+
+    ELSEIF NEW.ShippingCost < 0 THEN
+
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'O valor do frete não pode ser negativo.';
+
+    END IF;
+
+END $$
+
+
+DELIMITER ;
